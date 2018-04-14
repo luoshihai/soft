@@ -1,52 +1,96 @@
 #! /bin/bash
-down_file(){
-	[ -d "/data/soft" ] || mkdir -r /data/soft	
-	chmod 777 /data/soft
-	cd /data/soft
-	[ -f nginx-1.10.2.tar.gz ] || wget -P /data/soft "https://github.com/luoshihai/doc/blob/master/nginx-1.10.2.tar.gz"
-	[ -f pcre-8.39.tar.gz ] || wget -P /data/soft "https://github.com/luoshihai/doc/blob/master/pcre-8.39.tar.gz"
-	echo "------------------------------down finish----------------------------------------------------" 
-	[ -f nginx-1.10.2.tar.gz ] ||  (echo "---------------------------------------nginx download failured---------------------------" && exit)
-	[ -f pcre-8.39.tar.gz ] || (echo "-----------------------------------------pcre download failured---------------------------" && exit)
+prepare_file(){
+        [ -d "/data/soft" ] || mkdir -p /data/soft
+        chmod 777 /data/soft
+	apt-get -y --force-yes install git
+	apt-get -y --force-yes install gcc
+	git clone "https://github.com/luoshihai/soft.git"
+	cd soft
+
 }
 install_pcre(){
-	cd /data/soft
-	[ -d pcre-8.39 ] && rm -rf pcre-8.39
-	tar xf pcre-8.39.tar.gz
-	cd pcre-8.39
-	./configure
-	make
-	make install
-	echo "-----------------------------------------------------------------------------------------------" 
-	echo "---------------------------------------pcre install finished---------------------------------------" 
-	if [ $? == 0 ]
-	then
-	echo "--------------------------------pcre install success----------------------------------------" 
-	else
-	echo "-------------------------------------prce install failed-------------------------------------"
-	exit
-	fi
+	cd $host
+        tar xf pcre-8.39.tar.gz -C /data/soft
+        cd /data/soft
+        cd pcre-8.39
+        ./configure
+        make
+        make install
+        echo "-----------------------------------------------------------------------------------------------" 
+        echo "---------------------------------------pcre install finished---------------------------------------" 
+        if [ $? == 0 ]
+        then
+        echo "--------------------------------pcre install success----------------------------------------" 
+        else
+        echo "-------------------------------------prce install failed-------------------------------------"
+        exit
+        fi
 }
 install_nginx(){
-	cd /data/soft/
-	[ -d nginx-1.10.2 ] && rm -rf nginx-1.10.2
-	tar xf nginx-1.10.2.tar.gz
-	cd nginx-1.10.2/
-	./configure --prefix=/data/server/nginx --without-http_gzip_module
-	make
-	make install
-	echo "--------------------------------------nginx install finished---------------------------------------------------------" 
-	if [ $? == 0 ]
-	then
-	echo "-------------------------------------nginx install success------------------------------------------" 
-	else
-	echo "----------------------------------------nginx install failed---------------------------------------"
-	exit
-	fi
+	cd $host
+        tar xf nginx-1.10.2.tar.gz -C /data/soft
+        cd /data/soft/nginx-1.10.2/
+        ./configure --prefix=/data/server/nginx --without-http_gzip_module
+        make
+        make install
+	ln -s /data/soft/pcre-8.39/.libs/libpcre.so.1 /lib/x86_64-linux-gnu/
+        echo "--------------------------------------nginx install finished---------------------------------------------------------" 
+	/data/server/nginx/sbin/nginx -t
+	cp $host/nginx_script /etc/init.d/nginx	
+	chmod +x /etc/init.d/nginx	
+	export PATH=/data/server/nginx/sbin/:$PATH
+	source /etc/profile
+	update-rc.d nginx defaults
+	systemctl daemon-reload
+        if [ $? == 0 ]
+        then
+        echo "-------------------------------------nginx install success------------------------------------------" 
+        else
+        echo "----------------------------------------nginx install failed---------------------------------------"
+        exit
+        fi
 }
+install_redis(){
+	cd $host
+        tar xf redis-3.2.6.tar.gz -C /data/soft
+	tar -zxvf redis-3.2.6.tar.gz -C $data_path
+	cd $data_path/redis-3.2.6
+	make
+	make PREFIX=$install_path/redis install
+	set -i '128s#no#yes#g' /data/soft/redis-3.2.6/redis.conf
+	cp $host/redis_script /etc/init.d/redis
+	chmod +x /etc/init.d/redis	
+	export PATH=/data/install/redis/bin:$PATH
+	source /etc/profile
+	update-rc.d redis defaults
+}
+install_mysql(){
+	apt-get -y --force-yes install mysql-server
+}
+parm_num=$#
+arrary=$@
+host=$(pwd)/soft
+data_path=/data/soft
+install_path=/data/install
 main(){
-	down_file
+	prepare_file
+        if [[ $parm_num == 0 ]]
+        then
+        echo "参数错误 使用方式:/bin/bash $0 nginx|redis"
+        exit
+        elif [[ "${arrary[@]}" =~ "nginx" ]]
+        then
 	install_pcre
 	install_nginx
+        elif [[ "${arrary[@]}" =~ "redis" ]]
+        then
+	install_redis
+        elif [[ "${arrary[@]}" =~ "mysql" ]]
+        then
+	install_mysql
+        else
+        echo "参数错误 使用方式:/bin/bash $0 nginx|redis"
+        fi
 }
 main
+
