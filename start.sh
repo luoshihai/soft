@@ -67,8 +67,19 @@ install_redis(){
 install_mysql(){
 	apt-get -y --force-yes install mysql-server
 }
+install_env(){
+        sudo apt-get install python-pip
+        sudo pip install virtualenv
+        sudo pip install virtualenvwrapper
+        pip install --upgrade pip
+        mkdir ~/.virtualenvs
+        echo export WORKON_HOME=$HOME/.virtualenvs >> ~/.bashrc
+        echo source /usr/local/bin/virtualenvwrapper.sh >> ~/.bashrc
+        source ~/.bashrc
+}
+
 parm_num=$#
-arrary=$@
+array=$@
 host=$(pwd)/soft
 data_path=/data/soft
 install_path=/data/install
@@ -78,18 +89,24 @@ main(){
         then
         echo "参数错误 使用方式:/bin/bash $0 nginx|redis"
         exit
-        elif [[ "${arrary[@]}" =~ "nginx" ]]
-        then
-	install_pcre
-	install_nginx
-        elif [[ "${arrary[@]}" =~ "redis" ]]
-        then
-	install_redis
-        elif [[ "${arrary[@]}" =~ "mysql" ]]
-        then
-	install_mysql
         else
-        echo "参数错误 使用方式:/bin/bash $0 nginx|redis"
+		for i in ${array[@]}
+		do
+			if [[ $i =~ "nginx" ]]
+			then
+			install_pcre
+			install_nginx
+			elif [[ $i =~ "redis" ]]
+			then
+			install_redis
+			elif [[ $i =~ "mysql" ]]
+			then
+			install_mysql
+			elif [[ $i =~ "virtuallenv" ]]
+			then
+			install_evn
+			fi
+		done
         fi
 }
 main
