@@ -11,7 +11,8 @@
 2. redis安装路径路径:/data/install/redis
 3. redis 配置文件路径:/data/soft/redis-3.2.6/redis.conf
 4. redis使用方式: service redis start|stop|restart
-
+5. redis-cli 位置: /data/install/redis/bin/redis-cli
+6. 启动时候将配置文件 redis.conf 并修改 daemonize no（第128行） 为 daemonize yes 
 # mysql 配置
 1. MySQL 安装路径路径:/usr/bin/mysql
 2. MySQL 配置文件路径:/etc/mysql/mysql.conf.d/mysqld.cnf
