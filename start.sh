@@ -30,7 +30,7 @@ install_nginx(){
 	cd $host
         tar xf nginx-1.10.2.tar.gz -C /data/soft
         cd /data/soft/nginx-1.10.2/
-        ./configure --prefix=/data/server/nginx --without-http_gzip_module
+        ./configure --prefix=/data/server/nginx --without-http_gzip_module --with-http_stub_status_module –with-http_ssl_module
         make
         make install
 	ln -s /data/soft/pcre-8.39/.libs/libpcre.so.1 /lib/x86_64-linux-gnu/
